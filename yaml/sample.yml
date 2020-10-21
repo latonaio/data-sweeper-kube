@@ -1,0 +1,14 @@
+sweepTargets:
+  - name: 'image'
+    fileExtention: [ 'jpg', 'png' ]
+    interval: 500
+  - name: 'movie'
+    fileExtention: [ 'mp4', 'png' ]
+    interval: 5000
+  - name: 'text'
+    fileExtention: [ 'txt', 'csv', 'json' ]
+    interval: 5000
+ignoreMicroservices:
+  - microservice:  check-dongle-connection
+    fileExtention: ['jpg', 'mp4', 'json']
+    fileName: ['202008201552.jpg', '202008111543.mp4', '202008111544.png']
