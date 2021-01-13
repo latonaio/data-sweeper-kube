@@ -1,13 +1,14 @@
 package main
 
 import (
-	"os"
-	"time"
 	"fmt"
-	"strings"
-	"strconv"
 	"io/ioutil"
+	"os"
+	"os/signal"
 	"path/filepath"
+	"strconv"
+	"strings"
+	"time"
 
 	"bitbucket.org/latonaio/data-sweeper-kube/config"
 )
@@ -25,26 +26,26 @@ func getSweepInfo(filePath string, setting *config.Setting) (string, string, int
 }
 
 func inSweepInterval(filePath string, interval int) bool {
-    f, _ := os.Stat(filePath)
+	f, _ := os.Stat(filePath)
 
-    return time.Now().Add(-(time.Millisecond*time.Duration(interval))).Before(f.ModTime())
+	return time.Now().Add(-(time.Millisecond * time.Duration(interval))).Before(f.ModTime())
 }
 
 func isIgnore(filePath string, setting *config.Setting) bool {
 	for _, st := range setting.IgnoreMicroservices {
 		if strings.Index(filePath, st.Microservice) >= 0 {
-			fmt.Println("ignore check: "+st.Microservice)
+			//fmt.Println("ignore check: " + st.Microservice)
 
 			for _, e := range st.FileExtention {
 				if strings.HasSuffix(filePath, e) {
-					fmt.Println("ignore: "+e+": "+filePath)
+					fmt.Println("ignore: " + e + ": " + filePath)
 					return true
 				}
 			}
 
 			for _, n := range st.FileName {
 				if strings.HasSuffix(filePath, n) {
-					fmt.Println("ignore: "+n+": "+filePath)
+					fmt.Println("ignore: " + n + ": " + filePath)
 					return true
 				}
 			}
@@ -66,20 +67,20 @@ func fileDelete(filePath string, setting *config.Setting) {
 	}
 
 	// check ignore list
-	if isIgnore(filePath, setting){
+	if isIgnore(filePath, setting) {
 		return
 	}
 
 	// delete this file
-	fmt.Println("delete file: "+filePath)
+	fmt.Println("delete file: " + filePath)
 	if err := os.Remove(filePath); err != nil {
-		fmt.Println("delete failed: "+filePath)
+		fmt.Println("delete failed: " + filePath)
 		fmt.Println(err)
 	}
 }
 
 func fileSearchRecursive(dir string, setting *config.Setting) {
-	fmt.Println("check dir: "+dir)
+	//fmt.Println("check dir: " + dir)
 	files, err := ioutil.ReadDir(dir)
 	if err != nil {
 		fmt.Println(err)
@@ -97,7 +98,7 @@ func fileSearchRecursive(dir string, setting *config.Setting) {
 func main() {
 	interval := time.Millisecond * 1000
 	if os.Getenv("SWEEP_CHECK_INTERVAL") != "" {
-        m, _ := strconv.Atoi(os.Getenv("SWEEP_CHECK_INTERVAL"))
+		m, _ := strconv.Atoi(os.Getenv("SWEEP_CHECK_INTERVAL"))
 		interval = time.Millisecond * time.Duration(m)
 	}
 	baseDir := "/var/lib/aion/Data"
@@ -107,18 +108,32 @@ func main() {
 	configFile := "/var/lib/aion/config/data-sweeper.yml"
 
 	if _, err := os.Stat(configFile); err != nil {
-		fmt.Println("please set configfile: "+configFile)
+		fmt.Println("please set configfile: " + configFile)
 	}
+	c := config.GetSettingInstance() // 構造体の取得
+	s, _ := c.LoadConfig(configFile) // 設定ファイルの読み込み
 
-    c := config.GetSettingInstance() // 構造体の取得
-    s, _ := c.LoadConfig(configFile) // 設定ファイルの読み込み
-	t := time.NewTicker(interval)
-	for {
-		select {
-		case <-t.C:
-			fileSearchRecursive(baseDir, s)
+	done := make(chan bool, 1)
+	go func() {
+		t := time.NewTicker(interval)
+		for {
+			select {
+			case <-t.C:
+				fileSearchRecursive(baseDir, s)
+			case <-done:
+				t.Stop()
+				goto L
+			}
 		}
-	}
-	t.Stop()
+	L:
+	}()
 
+	server := NewServer("0.0.0.0", 8080)
+	go server.Start()
+
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, os.Interrupt)
+	<-quit
+	done <- true
+	server.Stop()
 }
