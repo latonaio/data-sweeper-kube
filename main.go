@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"bitbucket.org/latonaio/data-sweeper-kube/config"
+	"bitbucket.org/latonaio/data-sweeper-kube/helper"
 )
 
 func getSweepInfo(filePath string, setting *config.Setting) (string, string, int) {
@@ -96,37 +97,84 @@ func fileSearchRecursive(dir string, setting *config.Setting) {
 }
 
 func main() {
-	interval := time.Millisecond * 1000
-	if os.Getenv("SWEEP_CHECK_INTERVAL") != "" {
-		m, _ := strconv.Atoi(os.Getenv("SWEEP_CHECK_INTERVAL"))
-		interval = time.Millisecond * time.Duration(m)
+	// 時間間隔または指定時刻を取得
+	var interval time.Duration
+	var alarm helper.Time
+	sweepStartType := os.Getenv("SWEEP_START_TYPE")
+	switch sweepStartType {
+	case "interval":
+		interval = time.Millisecond * 1000
+		if os.Getenv("SWEEP_CHECK_INTERVAL") != "" {
+			m, _ := strconv.Atoi(os.Getenv("SWEEP_CHECK_INTERVAL"))
+			interval = time.Millisecond * time.Duration(m)
+		}
+	case "alarm":
+		alarm = helper.NewTime(0, 0, 0)
+		if os.Getenv("SWEEP_CHECK_ALARM") != "" {
+			alarmSplice := strings.Split(os.Getenv("SWEEP_CHECK_ALARM"), ":")
+			hours, _ := strconv.Atoi(alarmSplice[0])
+			minutes, _ := strconv.Atoi(alarmSplice[1])
+			seconds, _ := strconv.Atoi(alarmSplice[2])
+			alarm = helper.NewTime(hours, minutes, seconds)
+
+		}
+	default:
+		fmt.Printf("invalid sweep start type: %s", sweepStartType)
+		return
 	}
+
 	baseDir := "/var/lib/aion/Data"
 	if os.Getenv("AION_HOME") != "" {
 		baseDir = filepath.Join(os.Getenv("AION_HOME"), "Data")
 	}
 	configFile := "/var/lib/aion/config/data-sweeper.yml"
-
 	if _, err := os.Stat(configFile); err != nil {
 		fmt.Println("please set configfile: " + configFile)
 	}
-	c := config.GetSettingInstance() // 構造体の取得
-	s, _ := c.LoadConfig(configFile) // 設定ファイルの読み込み
+	// 構造体作成
+	c := config.GetSettingInstance()
+	// 設定ファイルの読み込み
+	if err := c.LoadConfig(configFile); err != nil {
+		fmt.Printf("load config file error: %v", err)
+		return
+	}
 
 	done := make(chan bool, 1)
-	go func() {
-		t := time.NewTicker(interval)
-		for {
-			select {
-			case <-t.C:
-				fileSearchRecursive(baseDir, s)
-			case <-done:
-				t.Stop()
-				goto L
+
+	switch sweepStartType {
+	case "interval":
+		go func() {
+			t := time.NewTicker(interval)
+			for {
+				select {
+				case <-t.C:
+					fileSearchRecursive(baseDir, c)
+				case <-done:
+					t.Stop()
+					goto L
+				}
 			}
-		}
-	L:
-	}()
+		L:
+		}()
+	case "alarm":
+		go func() {
+			for {
+				// 指定時刻になると何回も繰り返し起動するためスリープを設けて防ぐ
+				time.Sleep(3 * time.Second)
+
+				t := helper.ScheduleAlarm(alarm, func() {
+					fmt.Println("alarm received")
+				})
+				select {
+				case <-t:
+					fileSearchRecursive(baseDir, c)
+				case <-done:
+					goto L
+				}
+			}
+		L:
+		}()
+	}
 
 	server := NewServer("0.0.0.0", 8080)
 	go server.Start()

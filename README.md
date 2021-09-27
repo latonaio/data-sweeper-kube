@@ -1,24 +1,32 @@
 # data-sweeper-kube
 data-sweeper-kubeは、kubernetes上で動作するdata-sweeperです。マイクロサービスが生成した不要なファイルを定期的に削除します。
+# 概要
+data-sweeper-kubeは、ファイル名や拡張子によって指定された、/var/lib/aion/Data配下(デフォルト設定)のファイルを、一定の期間(interval)ごと、または指定時刻ごとに削除します。ターゲットファイルや、除外するファイルの指定の仕方は、sample.ymlを参照してください。  
+また、data-sweeper-kubeはAPI serverを起動します。http://localhost:8080/sweeper にリクエストを送信することで、ターゲットファイルを指定し、削除させることができます。
+# 動作環境
+data-sweeper-kubeは、kubernetesおよびaion-core上での動作を前提としています。aion-coreの起動後に起動してください。
+# 起動方法
+Deployment作成前に削除機能の起動方法を設定してください。
+設定を変更する場合は`data-sweeper-kube/k8s/data-sweeper-kube.yaml`を開き、`SWEEP_START_TYPE`、`SWEEP_CHECK_INTERVAL`、`SWEEP_CHECK_ALARM`を変更してください。
+デフォルトで指定時刻（0時0分0秒）に起動するよう設定してあります。
+data-sweeper.yamlファイルを作成し、削除するファイルを指定してください。
+具体的なyamlファイルの記述方法は、`sample.yaml`を参照してください。  
+yamlファイルの配置場所は、デフォルトでは`/var/lib/aion/default/config`になっています。
 
-## 概要
-data-sweeper-kubeは、ファイル名や拡張子によって指定された、`/var/lib/aion/Data`配下(デフォルト設定)のファイルを、一定の期間(interval)をはさんで削除します。ターゲットファイルや、除外するファイルの指定の仕方は、`sample.yml`を参照してください。  
-また、data-sweeper-kubeはAPI serverを起動します。`http://localhost:8080/sweeper` にリクエストを送信することで、ターゲットファイルを指定し、削除させることができます。
+|  name                | デフォルト値           | 備考                                       | 
+| :------------------: | ------------------- | :---------------------------------------: | 
+| SWEEP_START_TYPE     | "alarm"             | 起動方法（"alarm"または"interval"を入力）     | 
+| SWEEP_CHECK_INTERVAL | "3000"              | 起動間隔（単位はミリ秒） | 
+| SWEEP_CHECK_ALARM    | "00:00:00"          | 起動時刻("HH:mm:ss"の形式で入力)                     |
 
-## 動作環境
-data-sweeper-kubeは、aion-coreのプラットフォーム上での動作を前提としています。 使用する際は、事前に下記の通りAIONの動作環境を用意してください。   
-* ARM CPU搭載のデバイス(NVIDIA Jetson シリーズ等)   
-* OS: Linux Ubuntu OS   
-* CPU: ARM64   
-* Kubernetes   
-* AION のリソース   
+上記の環境下で、以下のコマンドを入力してDeploymentを作成してください。
 
-## 起動方法
-1. docker imageのbuild
+1. Docker image の作成
 ```
 $ cd /path/to/data-sweeper-kube
 $ make docker-build
 ```
+
 2. Deploymentの作成
 ```
 $ cd /path/to/data-sweeper-kube

@@ -33,18 +33,18 @@ func GetSettingInstance() *Setting {
 	return sharedSettingInstance
 }
 
-func (s *Setting) LoadConfig(configPath string) (*Setting, error) {
+func (s *Setting) LoadConfig(configPath string) error {
 	f, err := os.Open(configPath)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer f.Close()
 	b, err := ioutil.ReadAll(f)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if err := yaml.Unmarshal(b, s); err != nil {
-		return nil, err
+		return err
 	}
-	return s, nil
+	return nil
 }
