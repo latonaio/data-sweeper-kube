@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -11,7 +12,10 @@ import (
 	"time"
 
 	"bitbucket.org/latonaio/data-sweeper-kube/config"
+
 	"bitbucket.org/latonaio/data-sweeper-kube/helper"
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
 )
 
 func getSweepInfo(filePath string, setting *config.Setting) (string, string, int) {
@@ -55,7 +59,51 @@ func isIgnore(filePath string, setting *config.Setting) bool {
 	return false
 }
 
+func getColumn(tableName string, columnName string, db *gorm.DB) []sql.NullString {
+	var column []sql.NullString
+	db.Table(tableName).Pluck(columnName, &column)
+	return column
+}
+
+func isExitsInDB(filePath string) bool {
+	dsn := fmt.Sprintf("%v:%v@tcp(%v:%v)/%v?charset=utf8mb4&parseTime=True",
+		os.Getenv("MYSQL_USER"),
+		os.Getenv("MYSQL_PASSWORD"),
+		os.Getenv("MYSQL_SERVICE_HOST"),
+		os.Getenv("MYSQL_SERVICE_PORT"),
+		os.Getenv("MYSQL_DB_NAME"),
+	)
+	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	if err != nil {
+		panic(err)
+	}
+	defer func() {
+		dbConn, err := db.DB()
+		if err != nil {
+			fmt.Println(err)
+		}
+		dbConn.Close()
+	}()
+
+	// MySQLに登録されているfile pathを取得
+	guestFaceImagePath := getColumn("XXX", "XXX", db)
+	productImagePath := getColumn("XXX", "XXX", db)
+	roomImagePath := getColumn("XXX", "XXX", db)
+
+	targets := append(append(guestFaceImagePath, productImagePath...), roomImagePath...)
+	for _, target := range targets {
+		// fmt.Println(">>>> target: ", target.String)
+		if target.Valid && strings.Contains(filePath, target.String) {
+			// fmt.Printf("this file is used: %v\n", filePath)
+			return true
+		}
+
+	}
+	return false
+}
+
 func fileDelete(filePath string, setting *config.Setting) {
+	// fmt.Printf("current file: %v\n", filePath)
 	// check file type
 	name, _, interval := getSweepInfo(filePath, setting)
 	if name == "" {
@@ -72,6 +120,10 @@ func fileDelete(filePath string, setting *config.Setting) {
 		return
 	}
 
+	if isExitsInDB(filePath) {
+		return
+	}
+
 	// delete this file
 	fmt.Println("delete file: " + filePath)
 	if err := os.Remove(filePath); err != nil {
@@ -81,7 +133,7 @@ func fileDelete(filePath string, setting *config.Setting) {
 }
 
 func fileSearchRecursive(dir string, setting *config.Setting) {
-	//fmt.Println("check dir: " + dir)
+	// fmt.Println("check dir: " + dir)
 	files, err := ioutil.ReadDir(dir)
 	if err != nil {
 		fmt.Println(err)
@@ -119,7 +171,7 @@ func main() {
 
 		}
 	default:
-		fmt.Printf("invalid sweep start type: %s", sweepStartType)
+		fmt.Printf("invalid sweep start type: %s\n", sweepStartType)
 		return
 	}
 
@@ -135,7 +187,7 @@ func main() {
 	c := config.GetSettingInstance()
 	// 設定ファイルの読み込み
 	if err := c.LoadConfig(configFile); err != nil {
-		fmt.Printf("load config file error: %v", err)
+		fmt.Printf("load config file error: %v\n", err)
 		return
 	}
 

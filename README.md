@@ -6,12 +6,8 @@ data-sweeper-kubeは、ファイル名や拡張子によって指定された、
 # 動作環境
 data-sweeper-kubeは、kubernetesおよびaion-core上での動作を前提としています。aion-coreの起動後に起動してください。
 # 起動方法
-Deployment作成前に削除機能の起動方法を設定してください。
-設定を変更する場合は`data-sweeper-kube/k8s/data-sweeper-kube.yaml`を開き、`SWEEP_START_TYPE`、`SWEEP_CHECK_INTERVAL`、`SWEEP_CHECK_ALARM`を変更してください。
+Deployment作成前に削除機能の起動方法を設定してください。設定を変更する場合は`data-sweeper-kube/k8s/data-sweeper-kube.yaml`を開き、`SWEEP_START_TYPE`、`SWEEP_CHECK_INTERVAL`、`SWEEP_CHECK_ALARM`を変更してください。
 デフォルトで指定時刻（0時0分0秒）に起動するよう設定してあります。
-data-sweeper.yamlファイルを作成し、削除するファイルを指定してください。
-具体的なyamlファイルの記述方法は、`sample.yaml`を参照してください。  
-yamlファイルの配置場所は、デフォルトでは`/var/lib/aion/default/config`になっています。
 
 |  name                | デフォルト値           | 備考                                       | 
 | :------------------: | ------------------- | :---------------------------------------: | 
@@ -20,32 +16,26 @@ yamlファイルの配置場所は、デフォルトでは`/var/lib/aion/default
 | SWEEP_CHECK_ALARM    | "00:00:00"          | 起動時刻("HH:mm:ss"の形式で入力)                     |
 
 上記の環境下で、以下のコマンドを入力してDeploymentを作成してください。
-
-1. Docker image の作成
-```
-$ cd /path/to/data-sweeper-kube
-$ make docker-build
-```
-
-2. Deploymentの作成
 ```
 $ cd /path/to/data-sweeper-kube
 $ kubectl apply -f ./k8s/data-sweeper.yaml
 ```
-
-3. Deployment作成後、以下のコマンドでPodが正しく生成されていることを確認
+Deployment作成後、以下のコマンドでPodが正しく生成されていることを確認してください。
 ```
 $ kubectl get pods
 ```
-
-## I/O
-### Input
-#### <yamlファイルから指定する場合>
+また、docker imageのbuild方法は以下の通りです。
+```
+$ cd /path/to/data-sweeper-kube
+$ make
+```
+# Input/Output
+## Input
+### yamlファイルから指定する場合
 data-sweeper.yamlファイルを作成し、削除するファイルを指定してください。
-具体的なyamlファイルの記述方法は、`sample.yaml`を参照してください。  
-yamlファイルの配置場所は、デフォルトでは`/var/lib/aion/default/config`になっています。
-
-#### <API serverから指定する場合>
+具体的なyamlファイルの記述方法は、sample.yamlを参照してください。  
+yamlファイルの配置場所は、デフォルトでは/var/lib/aion/default/configになっています。
+### API serverから指定する場合
 json形式でPOSTリクエストを送信してください。
 リクエストの例は以下の通りです。
 ```
@@ -56,13 +46,11 @@ json形式でPOSTリクエストを送信してください。
     "is_recursive": true
 }
 ```
-### Output
-`/var/lib/aion/Data`配下のファイルが削除されます。
-
-
-## 各種設定の変更
+## Output
+/var/lib/aion/Data配下のファイルが削除されます。
+# 各種設定の変更
 k8s/data-sweeper.ymlファイルのパラメーターを変更することで、Inputを指定するyamlファイルの配置場所や、削除対象のディレクトリ、intervalを変更することができます。
-### ディレクトリの変更
+## ディレクトリの変更
 | volumeMounts/volumes | name   | デフォルト値                 | 備考                                   | 
 | :------------------: | :----: | ---------------------------- | :------------------------------------: | 
 | volumeMounts         | data   | /var/lib/aion/Data           | 削除対象のディレクトリ　(コンテナ上)     | 
@@ -70,10 +58,9 @@ k8s/data-sweeper.ymlファイルのパラメーターを変更することで、
 | volumes              | data   | /var/lib/aion/default/Data   | 削除対象のディレクトリ                 | 
 | volumes              | config | /var/lib/aion/default/config | yamlファイルの配置場所                 | 
 
-### intervalの変更
+## intervalの変更
 | name                 | default | 
 | :------------------: | :-----: | 
 | SWEEP_CHECK_INTERVAL | 3000ms    | 
-
-## システム図
-![system_image](./document/data-sweeper-kube.jpg)
+# システム図
+![system_image](./document/data-sweeper-kube.png)

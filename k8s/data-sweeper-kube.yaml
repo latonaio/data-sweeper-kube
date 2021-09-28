@@ -25,7 +25,17 @@ spec:
         - name: SWEEP_START_TYPE
           value: "alarm"
         - name: SWEEP_CHECK_INTERVAL
-          value: "3000"
+          value: "600000"
+        - name: MYSQL_USER
+          value: "XXX"
+        - name: MYSQL_PASSWORD
+          value: "XXX"
+        - name: MYSQL_SERVICE_HOST
+          value: "mysql"
+        - name: MYSQL_SERVICE_PORT
+          value: "3306"
+        - name: MYSQL_DB_NAME
+          value: "XXX"
         - name: SWEEP_CHECK_ALARM
           value: "00:00:00"
         ports:
