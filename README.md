@@ -1,10 +1,13 @@
 # data-sweeper-kube
-data-sweeper-kubeは、kubernetes上で動作するdata-sweeperです。マイクロサービスが生成した不要なファイルを定期的に削除します。
+data-sweeper-kube は、主にエッジコンピューティング環境において、マイクロサービス等が生成した不要なファイルを定期的に削除するマイクロサービスです。
+
 # 概要
-data-sweeper-kubeは、ファイル名や拡張子によって指定された、/var/lib/aion/Data配下(デフォルト設定)のファイルを、一定の期間(interval)ごと、または指定時刻ごとに削除します。  
-必要に応じて、外部のAPI server が data-sweeper-kube を起動します。http://localhost:8080/sweeper にリクエストを送信することで、ターゲットファイルを指定し、削除させることができます。
+data-sweeper-kube は、ファイル名や拡張子によって指定された、/var/lib/aion/Data配下(デフォルト設定)のファイルを、一定の期間(interval)ごと、または指定時刻ごとに削除します。  
+必要に応じて、外部の API server が data-sweeper-kube を起動します。http://localhost:8080/sweeper にリクエストを送信することで、ターゲットファイルを指定し、削除させることができます。
+
 # 動作環境
-data-sweeper-kubeは、kubernetesおよびaion-core上での動作を前提としています。aion-coreの起動後に起動してください。
+data-sweeper-kube は、Kubernetes および AION 上での動作を前提としています。  
+
 # 起動方法
 Deployment作成前に削除機能の起動方法を設定してください。
 設定を変更する場合は`data-sweeper-kube/k8s/data-sweeper-kube.yaml`を開き、`SWEEP_START_TYPE`、`SWEEP_CHECK_INTERVAL`、`SWEEP_CHECK_ALARM`を変更してください。
