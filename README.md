@@ -27,21 +27,36 @@ yamlファイルの配置場所は、デフォルトでは`/var/lib/aion/default
 | SWEEP_CHECK_INTERVAL | "600000"              | 起動間隔（単位はミリ秒） | 
 | SWEEP_CHECK_ALARM    | "00:00:00"          | 起動時刻("HH:mm:ss"の形式で入力)                     |
 
-上記の環境下で、以下のコマンドを入力してDeploymentを作成してください。
+# data-sweeper のデプロイ・稼働
+aion-core 上でデプロイ・稼働を行うためには、aion-service-definitions のservices.yml に設定する必要があります。
 
-1. Docker image の作成
+ymlファイル(services.yml)の中身
 ```
-$ cd /path/to/data-sweeper-kube
-$ make docker-build
+  data-sweeper:
+    scale: 1
+    startup: yes
+    always: yes
+    network: NodePort
+    ports:
+      - name: data-sweeper
+        protocol: TCP
+        port: xxxx
+        nodePort: xxxx
+    env:
+      TZ: Asia/Tokyo
+      SWEEP_START_TYPE: "alarm"
+      SWEEP_CHECK_INTERVAL: "3000"
+      MYSQL_USER: "xxxx"
+      MYSQL_PASSWORD: "xxxx"
+      MYSQL_SERVICE_HOST: "mysql"
+      MYSQL_SERVICE_PORT: "xxxx"
+      MYSQL_DB_NAME: "xxxx"
+      SWEEP_CHECK_ALARM: "00:00:00"
+    volumeMountPathList:
+      - /var/lib/aion/config:/var/lib/aion/default/config
 ```
 
-2. Deploymentの作成
-```
-$ cd /path/to/data-sweeper-kube
-$ kubectl apply -f ./k8s/data-sweeper-kube.yaml
-```
-
-3. Deployment作成後、以下のコマンドでPodが正しく生成されていることを確認
+Deployment作成後、以下のコマンドでPodが正しく生成されていることを確認してください。
 ```
 $ kubectl get pods
 ```

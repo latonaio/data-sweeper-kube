@@ -1,0 +1,22 @@
+  data-sweeper:
+    scale: 1
+    startup: yes
+    always: yes
+    network: NodePort
+    ports:
+      - name: data-sweeper
+        protocol: TCP
+        port: xxxx
+        nodePort: xxxx
+    env:
+      TZ: Asia/Tokyo
+      SWEEP_START_TYPE: "alarm"
+      SWEEP_CHECK_INTERVAL: "3000"
+      MYSQL_USER: "xxxx"
+      MYSQL_PASSWORD: "xxxx"
+      MYSQL_SERVICE_HOST: "mysql"
+      MYSQL_SERVICE_PORT: "xxxx"
+      MYSQL_DB_NAME: "xxxx"
+      SWEEP_CHECK_ALARM: "00:00:00"
+    volumeMountPathList:
+      - /var/lib/aion/config:/var/lib/aion/default/config
