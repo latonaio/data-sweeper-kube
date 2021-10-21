@@ -27,6 +27,7 @@ yamlファイルの配置場所は、デフォルトでは`/var/lib/aion/default
 | SWEEP_CHECK_INTERVAL | "600000"              | 起動間隔（単位はミリ秒） | 
 | SWEEP_CHECK_ALARM    | "00:00:00"          | 起動時刻("HH:mm:ss"の形式で入力)                     |
 
+
 # data-sweeper のデプロイ・稼働
 aion-core 上でデプロイ・稼働を行うためには、aion-service-definitions のservices.yml に設定する必要があります。
 
@@ -44,15 +45,14 @@ ymlファイル(services.yml)の中身
         nodePort: xxxx
     env:
       TZ: Asia/Tokyo
-      SWEEP_START_TYPE: "alarm"
-      SWEEP_CHECK_INTERVAL: "3000"
       MYSQL_USER: "xxxx"
       MYSQL_PASSWORD: "xxxx"
       MYSQL_SERVICE_HOST: "mysql"
       MYSQL_SERVICE_PORT: "xxxx"
       MYSQL_DB_NAME: "xxxx"
-      SWEEP_CHECK_ALARM: "00:00:00"
     volumeMountPathList:
+      # Aion上でVolumeをマウントする場合、k8s上でボリュームを指定する場合と異なり、volumeMountsのパス:volumeのパスという書き方をする。
+      # volumeには、data-sweeper-kube.yaml が配置されている場所を指定する。デフォルトでの配置場所は/var/lib/aion/default/configになっています。
       - /var/lib/aion/config:/var/lib/aion/default/config
 ```
 
@@ -122,15 +122,12 @@ json形式でPOSTリクエストを送信してください。
 `/var/lib/aion/Data`配下のファイルが削除されます。  
 
 # 参考  
-
 ## 各種設定の変更
-k8s/data-sweeper.ymlファイルのパラメーターを変更することで、Inputを指定するyamlファイルの配置場所や、削除対象のディレクトリ、intervalを変更することができます。
+k8s/data-sweeper.ymlファイルのパラメーターを変更することで、Inputを指定するyamlファイルの配置場所や、intervalを変更することができます。
 ### ディレクトリの変更
 | volumeMounts/volumes | name   | デフォルト値                 | 備考                                   | 
 | :------------------: | :----: | ---------------------------- | :------------------------------------: | 
-| volumeMounts         | data   | /var/lib/aion/Data           | 削除対象のディレクトリ　(コンテナ上)     | 
 | volumeMounts         | config | /var/lib/aion/config         | yamlファイルの配置場所　(コンテナ上) | 
-| volumes              | data   | /var/lib/aion/default/Data   | 削除対象のディレクトリ                 | 
 | volumes              | config | /var/lib/aion/default/config | yamlファイルの配置場所                 | 
 
 ### intervalの変更
@@ -138,5 +135,8 @@ k8s/data-sweeper.ymlファイルのパラメーターを変更することで、
 | :------------------: | :-----: | 
 | SWEEP_CHECK_INTERVAL | 600000ms    | 
 
-## システム図
+## Output
+/var/lib/aion/Data配下のファイルが削除されます。
+
+# システム図
 ![system_image](./document/data-sweeper-kube.jpg)

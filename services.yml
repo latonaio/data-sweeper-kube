@@ -1,4 +1,4 @@
-  data-sweeper:
+data-sweeper:
     scale: 1
     startup: yes
     always: yes
@@ -10,13 +10,12 @@
         nodePort: xxxx
     env:
       TZ: Asia/Tokyo
-      SWEEP_START_TYPE: "alarm"
-      SWEEP_CHECK_INTERVAL: "3000"
       MYSQL_USER: "xxxx"
       MYSQL_PASSWORD: "xxxx"
       MYSQL_SERVICE_HOST: "mysql"
       MYSQL_SERVICE_PORT: "xxxx"
       MYSQL_DB_NAME: "xxxx"
-      SWEEP_CHECK_ALARM: "00:00:00"
     volumeMountPathList:
+      # Aion上でVolumeをマウントする場合、k8s上でボリュームを指定する場合と異なり、volumeMountsのパス:volumeのパスという書き方をする。
+      # volumeには、data-sweeper-kube.yaml が配置されている場所を指定する。デフォルトでの配置場所は/var/lib/aion/default/configになっています。
       - /var/lib/aion/config:/var/lib/aion/default/config
