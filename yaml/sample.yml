@@ -8,7 +8,11 @@ sweepTargets:
   - name: 'text'
     fileExtention: [ 'txt', 'csv', 'json' ]
     interval: 600000
-#ignoreMicroservices:
-#  - microservice:  check-dongle-connection
-#    fileExtention: ['jpg', 'mp4', 'json']
-#    fileName: ['202008201552.jpg', '202008111543.mp4', '202008111544.png']
+ignoreMicroservices:
+  - microservice:  check-dongle-connection
+    fileExtention: ['jpg', 'mp4', 'json']
+    fileName: ['202008201552.jpg', '202008111543.mp4', '202008111544.png']
+sweepSettings:
+  - sweepStartType: "alarm"
+    sweepCheckInterval: 600000
+    sweepCheckAlarm: "00:00:00"

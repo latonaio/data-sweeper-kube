@@ -15,9 +15,9 @@ data-sweeper-kube は、Kubernetes および AION 上での動作を前提とし
 
 # 起動方法
 Deployment作成前に削除機能の起動方法を設定してください。
-設定を変更する場合は`data-sweeper-kube/k8s/data-sweeper-kube.yaml`を開き、`SWEEP_START_TYPE`、`SWEEP_CHECK_INTERVAL`、`SWEEP_CHECK_ALARM`を変更してください。
+設定を変更する場合は`data-sweeper-kube/yaml/sample.yml`を開き、`SWEEP_START_TYPE`、`SWEEP_CHECK_INTERVAL`、`SWEEP_CHECK_ALARM`を変更してください。
 デフォルトで指定時刻（0時0分0秒）に起動するよう設定してあります。
-data-sweeper.yamlファイルを作成し、削除するファイルを指定してください。
+sample.yamlファイルを編集し、削除するファイルを指定してください。
 具体的なyamlファイルの記述方法は、`sample.yaml`を参照してください。  
 yamlファイルの配置場所は、デフォルトでは`/var/lib/aion/default/config`になっています。
 
@@ -28,8 +28,8 @@ yamlファイルの配置場所は、デフォルトでは`/var/lib/aion/default
 | SWEEP_CHECK_ALARM    | "00:00:00"          | 起動時刻("HH:mm:ss"の形式で入力)                     |
 
 
-# data-sweeper のデプロイ・稼働
-aion-core 上でデプロイ・稼働を行うためには、aion-service-definitions のservices.yml に設定する必要があります。
+# data-sweeper-kube のデプロイ・稼働
+data-sweeper-kube の デプロイ・稼働 を行うためには、aion-service-definitions の services.yml に設定する必要があります。
 
 ymlファイル(services.yml)の中身
 ```
@@ -51,8 +51,8 @@ ymlファイル(services.yml)の中身
       MYSQL_SERVICE_PORT: "xxxx"
       MYSQL_DB_NAME: "xxxx"
     volumeMountPathList:
-      # Aion上でVolumeをマウントする場合、k8s上でボリュームを指定する場合と異なり、volumeMountsのパス:volumeのパスという書き方をする。
-      # volumeには、data-sweeper-kube.yaml が配置されている場所を指定する。デフォルトでの配置場所は/var/lib/aion/default/configになっています。
+      # Aion上でVolumeをマウントする場合、k8s上でボリュームを指定する場合と異なり、volumeMountsのパス:volumeのパスという書き方をします。
+      # volumeには、yml が配置されている場所を指定します。デフォルトでの配置場所は/var/lib/aion/default/configになっています。
       - /var/lib/aion/config:/var/lib/aion/default/config
 ```
 
@@ -64,18 +64,19 @@ $ kubectl get pods
 ## I/O
 ### Input
 　　
-#### Data Sweeperの実行間隔定義  
+#### Data Sweeper の実行間隔定義  
 
 下記は、Data Sweeper の実行間隔を指定しています。  
 単位は、ミリ秒です。  
-yamlファイルは、k8s/data-sweeper-kube.yaml　にあります。  
+yamlファイルは、yaml/sample.yml　にあります。  
 ```
-- name: SWEEP_CHECK_INTERVAL
- value: "600000"
+sweepSettings:
+     sweepCheckInterval: 600000
 ```  
 
 実行時にここで指定されたパラメータのミリ秒分は、削除をしません。  
 yamlファイルは、yaml/sample.yml　にあります。  
+
 ```
 sweepTargets:
   - name: 'image'
@@ -93,11 +94,14 @@ sweepTargets:
 #### Data Sweeper 実行対象からの除外
 ここで定義したファイル以外は、削除されてしまいますのでご注意ください。  
 
-適切な Database の名前を入れます。  
-yamlファイルは、k8s/data-sweeper-kube.yaml　にあります。  
+適切な Database(MySQL) の名前を入れます。  
+yamlファイルは、services.yaml　にあります。  
 ```
-- name: MYSQL_DB_NAME
- value: "Hogehoge"
+      MYSQL_USER: "xxxx"
+      MYSQL_PASSWORD: "xxxx"
+      MYSQL_SERVICE_HOST: "mysql"
+      MYSQL_SERVICE_PORT: "xxxx"
+      MYSQL_DB_NAME: "xxxx"
 ```  
 
 Database で定義された所定のファイルを exclude します。  
@@ -107,7 +111,9 @@ main.go で次のように記載されています。
 func isExitsInDB(filePath string) bool {
 ```  
 
-#### 外部のAPI serverから指定する場合
+また、接続するMYSQLにdata_sweeper_ignore_tables というテーブルがある場合、そこに記載されているカラムとひもづくファイルを除外することができます。詳しくは[こちら](https://bitbucket.org/latonaio/data-sweeper-kube-sql/src/master/)を参照してください。
+
+#### 外部の API Server から指定する場合
 json形式でPOSTリクエストを送信してください。
 リクエストの例は以下の通りです。
 ```
@@ -123,7 +129,7 @@ json形式でPOSTリクエストを送信してください。
 
 # 参考  
 ## 各種設定の変更
-k8s/data-sweeper.ymlファイルのパラメーターを変更することで、Inputを指定するyamlファイルの配置場所や、intervalを変更することができます。
+sample.ymlファイルのパラメーターを変更することで、Inputを指定するyamlファイルの配置場所や、intervalを変更することができます。
 ### ディレクトリの変更
 | volumeMounts/volumes | name   | デフォルト値                 | 備考                                   | 
 | :------------------: | :----: | ---------------------------- | :------------------------------------: | 

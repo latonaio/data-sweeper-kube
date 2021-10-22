@@ -18,6 +18,12 @@ import (
 	"gorm.io/gorm"
 )
 
+type Data_Sweeper_Ignore_Tables struct {
+	ID          int    `gorm:"column:id"`
+	TableName   string `gorm:"column:table_name"`
+	TableColumn string `gorm:"column:table_column"`
+}
+
 func getSweepInfo(filePath string, setting *config.Setting) (string, string, int) {
 	for _, st := range setting.SweepTargets {
 
@@ -28,6 +34,13 @@ func getSweepInfo(filePath string, setting *config.Setting) (string, string, int
 		}
 	}
 	return "", "", 0
+}
+
+func getSweepSetting(setting *config.Setting) (string, int, string) {
+	for _, ss := range setting.SweepSettings {
+		return ss.SweepStartType, ss.SweepCheckInterval, ss.SweepCheckAlarm
+	}
+	return "", 0, ""
 }
 
 func inSweepInterval(filePath string, interval int) bool {
@@ -59,10 +72,21 @@ func isIgnore(filePath string, setting *config.Setting) bool {
 	return false
 }
 
-func getColumn(tableName string, columnName string, db *gorm.DB) []sql.NullString {
-	var column []sql.NullString
-	db.Table(tableName).Pluck(columnName, &column)
-	return column
+func getIgnoreTable(db *gorm.DB) []sql.NullString {
+	var dsit []Data_Sweeper_Ignore_Tables
+	db.Find(&dsit)
+
+	var targets []sql.NullString
+	for i := 0; i < len(dsit); i++ {
+		data := [][]string{{dsit[i].TableName, dsit[i].TableColumn}}
+		tablename := (data[0][0])
+		tablecolumn := (data[0][1])
+
+		var column []sql.NullString
+		db.Table(tablename).Pluck(tablecolumn, &column)
+		targets = append(append(column))
+	}
+	return targets
 }
 
 func isExitsInDB(filePath string) bool {
@@ -85,12 +109,8 @@ func isExitsInDB(filePath string) bool {
 		dbConn.Close()
 	}()
 
-	// MySQLに登録されているfile pathを取得
-	guestFaceImagePath := getColumn("XXX", "XXX", db)
-	productImagePath := getColumn("XXX", "XXX", db)
-	roomImagePath := getColumn("XXX", "XXX", db)
+	targets := getIgnoreTable(db)
 
-	targets := append(append(guestFaceImagePath, productImagePath...), roomImagePath...)
 	for _, target := range targets {
 		// fmt.Println(">>>> target: ", target.String)
 		if target.Valid && strings.Contains(filePath, target.String) {
@@ -152,28 +172,6 @@ func main() {
 	// 時間間隔または指定時刻を取得
 	var interval time.Duration
 	var alarm helper.Time
-	sweepStartType := os.Getenv("SWEEP_START_TYPE")
-	switch sweepStartType {
-	case "interval":
-		interval = time.Millisecond * 1000
-		if os.Getenv("SWEEP_CHECK_INTERVAL") != "" {
-			m, _ := strconv.Atoi(os.Getenv("SWEEP_CHECK_INTERVAL"))
-			interval = time.Millisecond * time.Duration(m)
-		}
-	case "alarm":
-		alarm = helper.NewTime(0, 0, 0)
-		if os.Getenv("SWEEP_CHECK_ALARM") != "" {
-			alarmSplice := strings.Split(os.Getenv("SWEEP_CHECK_ALARM"), ":")
-			hours, _ := strconv.Atoi(alarmSplice[0])
-			minutes, _ := strconv.Atoi(alarmSplice[1])
-			seconds, _ := strconv.Atoi(alarmSplice[2])
-			alarm = helper.NewTime(hours, minutes, seconds)
-
-		}
-	default:
-		fmt.Printf("invalid sweep start type: %s\n", sweepStartType)
-		return
-	}
 
 	baseDir := "/var/lib/aion/Data"
 	if os.Getenv("AION_HOME") != "" {
@@ -187,7 +185,30 @@ func main() {
 	c := config.GetSettingInstance()
 	// 設定ファイルの読み込み
 	if err := c.LoadConfig(configFile); err != nil {
-		fmt.Printf("load config file error: %v\n", err)
+		fmt.Printf("load config file error: %v", err)
+		return
+	}
+
+	sweepStartType, sweepCheckInterval, sweepCheckAlarm := getSweepSetting(c)
+	switch sweepStartType {
+	case "interval":
+		interval = time.Millisecond * 1000
+		if strconv.Itoa(sweepCheckInterval) != "" {
+			m := sweepCheckInterval
+			interval = time.Millisecond * time.Duration(m)
+		}
+	case "alarm":
+		alarm = helper.NewTime(0, 0, 0)
+		if sweepCheckAlarm != "" {
+			alarmSplice := strings.Split(sweepCheckAlarm, ":")
+			hours, _ := strconv.Atoi(alarmSplice[0])
+			minutes, _ := strconv.Atoi(alarmSplice[1])
+			seconds, _ := strconv.Atoi(alarmSplice[2])
+			alarm = helper.NewTime(hours, minutes, seconds)
+
+		}
+	default:
+		fmt.Printf("invalid sweep start type: %s\n", sweepStartType)
 		return
 	}
 

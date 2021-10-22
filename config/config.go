@@ -8,8 +8,9 @@ import (
 )
 
 type Setting struct {
-	SweepTargets        []*SweepTarget        `yaml:"sweepTargets"`
+	SweepTargets        []*sweepTarget        `yaml:"sweepTargets"`
 	IgnoreMicroservices []*ignoreMicroservice `yaml:"ignoreMicroservices"`
+	SweepSettings       []*sweepSettings      `yaml:"sweepSettings"`
 }
 
 type ignoreMicroservice struct {
@@ -18,10 +19,16 @@ type ignoreMicroservice struct {
 	FileExtention []string `yaml:"fileExtention,omitempty"`
 }
 
-type SweepTarget struct {
+type sweepTarget struct {
 	Name          string   `yaml:"name"`
 	FileExtention []string `yaml:"fileExtention"`
 	Interval      int      `yaml:"interval"`
+}
+
+type sweepSettings struct {
+	SweepStartType     string `yaml:"sweepStartType"`
+	SweepCheckInterval int    `yaml:"sweepCheckInterval"`
+	SweepCheckAlarm    string `yaml:"sweepCheckAlarm"`
 }
 
 var sharedSettingInstance *Setting
