@@ -6,12 +6,12 @@ data-sweeper-kube は、ファイル名や拡張子によって指定された�
 必要に応じて、外部の API server が data-sweeper-kube を起動します。http://localhost:8080/sweeper にリクエストを送信することで、ターゲットファイルを指定し、削除させることができます。
 
 # 動作環境
-data-sweeper-kube は、Kubernetes および AION 上での動作を前提としています。    
-以下の環境が必要となります。  
-・OS: Linux OS  
-・CPU: ARM/AMD/Intel  
-・Kubernetes  
-・AION  
+data-sweeper-kube を動作させるためには、以下の環境が必要となります。  
+
+* OS: Linux OS  
+* CPU: ARM/AMD/Intel  
+* Kubernetes  
+
 
 # 起動方法
 Deployment作成前に削除機能の起動方法を設定してください。
