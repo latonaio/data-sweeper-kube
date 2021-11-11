@@ -1,4 +1,4 @@
-module bitbucket.org/latonaio/data-sweeper-kube
+module github.com/latonaio/data-sweeper-kube
 
 go 1.14
 
