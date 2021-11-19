@@ -1,3 +1,10 @@
+<p align="center"> 
+<img src="https://user-images.githubusercontent.com/91356865/142597018-529c1931-873b-43a1-be9b-c02d76009a88.png" width="300">
+</p>
+<p align="center"></p>
+
+***
+
 # data-sweeper-kube
 data-sweeper-kube は、主にエッジコンピューティング環境において、マイクロサービス等が生成した不要なファイルを定期的に削除するマイクロサービスです。
 
